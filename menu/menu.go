@@ -159,10 +159,8 @@ func ModifyAirport(db *sqlx.DB) {
 				continue
 			}
 
-			fmt.Printf("%s %s %s %s\n",
-				cyan("Airport"),
-				bold(dbAirport.Name),
-				bold("("+dbAirport.ICAO+")"),
+			fmt.Printf("%s %s\n",
+				dbAirport.ICAO,
 				cyan("fetched from API and added to database."))
 
 			// Update airport variable
@@ -219,14 +217,7 @@ func ModifyAirport(db *sqlx.DB) {
 					*airport.Longitude)
 			}
 
-			// Display FBO status
-			fboStatus := "No"
-			if airport.HasFBO {
-				fboStatus = green("Yes")
-			} else {
-				fboStatus = yellow("No")
-			}
-			fmt.Printf("%s %s\n", bold("Has FBO:"), fboStatus)
+			// Removed "Has FBO" as per requirements
 			fmt.Println() // Add a blank line for better readability
 
 			// Show modification options
@@ -270,6 +261,7 @@ func ModifyCountryCode(db *sqlx.DB, airport *models.Airport) {
 	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	var countryCode string
 	prompt := &survey.Input{
@@ -296,7 +288,7 @@ func ModifyCountryCode(db *sqlx.DB, airport *models.Airport) {
 		WHERE id = :id
 	`, airport)
 	if err != nil {
-		fmt.Printf("Error updating airport: %v\n", err)
+		fmt.Printf("%s %v\n", red("Error updating airport:"), err)
 		return
 	}
 
@@ -311,6 +303,7 @@ func ModifyState(db *sqlx.DB, airport *models.Airport) {
 	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	var state string
 	defaultState := ""
@@ -338,7 +331,7 @@ func ModifyState(db *sqlx.DB, airport *models.Airport) {
 		WHERE id = :id
 	`, airport)
 	if err != nil {
-		fmt.Printf("Error updating airport: %v\n", err)
+		fmt.Printf("%s %v\n", red("Error updating airport:"), err)
 		return
 	}
 
@@ -357,6 +350,7 @@ func ModifyCountryName(db *sqlx.DB, airport *models.Airport) {
 	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	var countryName string
 	defaultCountryName := ""
@@ -384,7 +378,7 @@ func ModifyCountryName(db *sqlx.DB, airport *models.Airport) {
 		WHERE id = :id
 	`, airport)
 	if err != nil {
-		fmt.Printf("Error updating airport: %v\n", err)
+		fmt.Printf("%s %v\n", red("Error updating airport:"), err)
 		return
 	}
 
@@ -403,6 +397,7 @@ func ModifyCity(db *sqlx.DB, airport *models.Airport) {
 	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	var city string
 	defaultCity := ""
@@ -430,7 +425,7 @@ func ModifyCity(db *sqlx.DB, airport *models.Airport) {
 		WHERE id = :id
 	`, airport)
 	if err != nil {
-		fmt.Printf("Error updating airport: %v\n", err)
+		fmt.Printf("%s %v\n", red("Error updating airport:"), err)
 		return
 	}
 
@@ -469,7 +464,9 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			// Initialize API client
 			onairAPI, err := api.NewOnAirAPI()
 			if err != nil {
-				fmt.Printf("Error initializing API client: %v\n", err)
+				// Define color functions
+				red := color.New(color.FgRed).SprintFunc()
+				fmt.Printf("%s %v\n", red("Error initializing API client:"), err)
 				fmt.Println("Please set the ONAIR_API_KEY environment variable in your .env file.")
 				continue
 			}
@@ -477,7 +474,9 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			// Fetch airport from API
 			apiAirport, err := onairAPI.GetAirport(icao)
 			if err != nil {
-				fmt.Printf("Error fetching airport from API: %v\n", err)
+				// Define color functions
+				redBold := color.New(color.FgRed, color.Bold).SprintFunc()
+				fmt.Printf("%s %v\n", redBold("Error fetching airport from API:"), err)
 				continue
 			}
 
@@ -486,7 +485,9 @@ func SearchAirportByICAO(db *sqlx.DB) {
 
 			// Check if country code is empty
 			if dbAirport.CountryCode == "" {
-				fmt.Printf("Airport with ICAO %s has no country code. Please enter a country code:\n", icao)
+				// Define color functions
+				orange := color.New(color.FgYellow).Add(color.Bold).SprintFunc()
+				fmt.Printf("%s\n", orange(fmt.Sprintf("Airport with ICAO %s has no country code. Please enter a country code:", icao)))
 
 				var countryCode string
 				countryPrompt := &survey.Input{
@@ -523,7 +524,7 @@ func SearchAirportByICAO(db *sqlx.DB) {
 				continue
 			}
 
-			fmt.Printf("Airport %s (%s) fetched from API and added to database.\n", dbAirport.Name, dbAirport.ICAO)
+			fmt.Println("Added to database.")
 
 			// Update airport variable
 			airport = dbAirport
@@ -533,7 +534,6 @@ func SearchAirportByICAO(db *sqlx.DB) {
 		bold := color.New(color.Bold).SprintFunc()
 		cyan := color.New(color.FgCyan).SprintFunc()
 		green := color.New(color.FgGreen).SprintFunc()
-		yellow := color.New(color.FgYellow).SprintFunc()
 
 		fmt.Printf("%s %s %s %s\n",
 			bold("Airport found:"),
@@ -548,14 +548,7 @@ func SearchAirportByICAO(db *sqlx.DB) {
 				*airport.Longitude)
 		}
 
-		fboStatus := "No"
-		if airport.HasFBO {
-			fboStatus = green("Yes")
-		} else {
-			fboStatus = yellow("No")
-		}
-
-		fmt.Printf("%s %s\n", bold("Has FBO:"), fboStatus)
+		// Removed "Has FBO" as per requirements
 		fmt.Println() // Add a blank line for better readability
 	}
 }
@@ -591,9 +584,12 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 // ListAirportsWithFBOs lists all airports with FBOs and provides options to add/remove FBOs
 func ListAirportsWithFBOs(db *sqlx.DB) {
 	for {
+		// Define color functions
+		red := color.New(color.FgRed).SprintFunc()
+
 		airports, err := fbo.ListAirportsWithFBOs(db)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Printf("%s %v\n", red("Error:"), err)
 			return
 		}
 
@@ -626,6 +622,9 @@ func ListAirportsWithFBOs(db *sqlx.DB) {
 
 // FBOOptions displays options for a selected FBO
 func FBOOptions(db *sqlx.DB, icao string) {
+	// Define color functions
+	red := color.New(color.FgRed).SprintFunc()
+
 	var option string
 	prompt := &survey.Select{
 		Message: fmt.Sprintf("FBO at %s:", icao),
@@ -639,7 +638,7 @@ func FBOOptions(db *sqlx.DB, icao string) {
 	if option == "Remove FBO" {
 		err := fbo.RemoveFBO(db, icao)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Printf("%s %v\n", red("Error:"), err)
 		} else {
 			fmt.Printf("FBO at %s removed successfully.\n", icao)
 		}
@@ -739,10 +738,8 @@ func AddFBO(db *sqlx.DB) {
 				continue
 			}
 
-			fmt.Printf("%s %s %s %s\n",
-				cyan("Airport"),
-				bold(dbAirport.Name),
-				bold("("+dbAirport.ICAO+")"),
+			fmt.Printf("%s %s\n",
+				dbAirport.ICAO,
 				cyan("fetched from API and added to database."))
 		}
 
@@ -762,9 +759,12 @@ func AddFBO(db *sqlx.DB) {
 
 // ListDistancesBetweenFBOs lists the distances between all FBOs
 func ListDistancesBetweenFBOs(db *sqlx.DB) {
+	// Define color functions
+	red := color.New(color.FgRed).SprintFunc()
+
 	result, err := fbo.ListDistancesBetweenFBOs(db)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("%s %v\n", red("Error:"), err)
 		return
 	}
 
