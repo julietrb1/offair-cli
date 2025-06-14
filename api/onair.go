@@ -81,9 +81,8 @@ func (api *OnAirAPI) GetAirport(icao string) (*onair.Airport, error) {
 		return nil, fmt.Errorf("airport with ICAO %s has no name in the API", icao)
 	}
 
-	if apiResp.Content.CountryCode == "" {
-		return nil, fmt.Errorf("airport with ICAO %s has no country code in the API", icao)
-	}
+	// Note: We don't check for empty country code here anymore
+	// If the country code is empty, we'll prompt the user to enter it
 
 	return &apiResp.Content, nil
 }

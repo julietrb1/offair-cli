@@ -87,6 +87,28 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
 
+			// Check if country code is empty
+			if dbAirport.CountryCode == "" {
+				fmt.Printf("Airport with ICAO %s has no country code. Please enter a country code:\n", icao)
+
+				var countryCode string
+				countryPrompt := &survey.Input{
+					Message: "Enter country code (blank to go back to ICAO input):",
+				}
+				survey.AskOne(countryPrompt, &countryCode)
+
+				// If the user enters a blank country code, return to the ICAO input prompt
+				if countryCode == "" {
+					continue
+				}
+
+				// Convert country code to uppercase
+				countryCode = strings.ToUpper(countryCode)
+
+				// Update the airport object with the user-provided country code
+				dbAirport.CountryCode = countryCode
+			}
+
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
@@ -277,6 +299,31 @@ func AddFBO(db *sqlx.DB) {
 
 			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
+
+			// Check if country code is empty
+			if dbAirport.CountryCode == "" {
+				fmt.Printf("%s %s %s\n",
+					yellow("Airport with ICAO"),
+					bold(icao),
+					yellow("has no country code. Please enter a country code:"))
+
+				var countryCode string
+				countryPrompt := &survey.Input{
+					Message: "Enter country code (blank to go back to ICAO input):",
+				}
+				survey.AskOne(countryPrompt, &countryCode)
+
+				// If the user enters a blank country code, return to the ICAO input prompt
+				if countryCode == "" {
+					continue
+				}
+
+				// Convert country code to uppercase
+				countryCode = strings.ToUpper(countryCode)
+
+				// Update the airport object with the user-provided country code
+				dbAirport.CountryCode = countryCode
+			}
 
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
