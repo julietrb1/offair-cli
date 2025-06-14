@@ -558,18 +558,21 @@ func FindOptimalFBOLocations(db *sqlx.DB, optimalDistance, maxDistance float64, 
 			coloredScore = red(fmt.Sprintf("%d", intScore))
 		}
 
-		result += fmt.Sprintf("%d. %s %s - %s: %s - %s: %d/%d\n",
+		// Format with consistent column alignment for easier scanning like a table
+		scoreSection := fmt.Sprintf("Score: %s", coloredScore)
+		connectionsSection := fmt.Sprintf("Connections: %d/%d", eligibleConnections, totalConnections)
+
+		result += fmt.Sprintf("%-3d %-40s  %-15s  %-20s\n",
 			i+1,
-			bold(airport.Name),
-			cyan("("+airport.ICAO+")"),
-			bold("Score"), coloredScore,
-			bold("Eligible connections"), eligibleConnections, totalConnections)
+			bold(airport.Name)+" "+cyan("("+airport.ICAO+")"),
+			bold(scoreSection),
+			bold(connectionsSection))
 
 		// Add details about eligible connections (limited to top 5)
 		if len(connections) > 0 {
 			var connectionDetails []string
 			for _, conn := range connections {
-				connectionDetails = append(connectionDetails, fmt.Sprintf("%s (%.2f nm)", conn.ICAO, conn.Distance))
+				connectionDetails = append(connectionDetails, fmt.Sprintf("%s (%d nm)", conn.ICAO, int(math.Round(conn.Distance))))
 			}
 
 			result += fmt.Sprintf("   %s\n",

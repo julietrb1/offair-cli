@@ -188,6 +188,22 @@ func ModifyAirport(db *sqlx.DB) {
 			airport = dbAirport
 		}
 
+		// Check if airport exists but doesn't have an airport type
+		if airport.AirportType == nil {
+			// Prompt for airport type
+			promptForAirportType(&airport)
+
+			// Update the database with the new airport type
+			_, err = db.NamedExec(`
+				UPDATE airports SET
+					airport_type = :airport_type
+				WHERE id = :id
+			`, airport)
+			if err != nil {
+				fmt.Printf("%s %v\n", color.RedString("Error updating airport:"), err)
+			}
+		}
+
 		// Inner loop for modifying fields
 		for {
 			// Display airport information
@@ -574,11 +590,12 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
 
-			// Check if country code is empty
-			if dbAirport.CountryCode == "" {
-				// Define color functions
-				orange := color.New(color.FgYellow).Add(color.Bold).SprintFunc()
-				fmt.Printf("%s\n", orange(fmt.Sprintf("Airport with ICAO %s has no country code. Please enter a country code:", icao)))
+			if dbAirport.CountryCode == "" && icao[0] == 'Y' {
+				// Infer "AU" from above assumption
+				countryCode := "AU"
+				dbAirport.CountryCode = countryCode
+			} else if dbAirport.CountryCode == "" {
+				fmt.Printf("%s\n", color.YellowString(fmt.Sprintf("Airport with ICAO %s has no country code. Please enter a country code:", icao)))
 
 				var countryCode string
 				countryPrompt := &survey.Input{
@@ -599,26 +616,7 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			}
 
 			// Prompt for airport type
-			var airportTypeOption string
-			airportTypePrompt := &survey.Select{
-				Message: "Select airport type:",
-				Options: []string{
-					"Aircraft Landing Area (ALA)",
-					"Aerodrome (AD)",
-					"Skip",
-				},
-			}
-			survey.AskOne(airportTypePrompt, &airportTypeOption)
-
-			// Update the airport object with the user-provided airport type
-			if airportTypeOption == "Aerodrome (AD)" {
-				airportType := "AD"
-				dbAirport.AirportType = &airportType
-			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
-				airportType := "ALA"
-				dbAirport.AirportType = &airportType
-			}
-			// If the user selects "Skip", leave the airport type as nil
+			promptForAirportType(&dbAirport)
 
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
@@ -643,6 +641,22 @@ func SearchAirportByICAO(db *sqlx.DB) {
 
 			// Update airport variable
 			airport = dbAirport
+		}
+
+		// Check if airport exists but doesn't have an airport type
+		if airport.AirportType == nil {
+			// Prompt for airport type
+			promptForAirportType(&airport)
+
+			// Update the database with the new airport type
+			_, err = db.NamedExec(`
+				UPDATE airports SET
+					airport_type = :airport_type
+				WHERE id = :id
+			`, airport)
+			if err != nil {
+				fmt.Printf("%s %v\n", color.RedString("Error updating airport:"), err)
+			}
 		}
 
 		// Define color functions
@@ -874,6 +888,22 @@ func AddFBO(db *sqlx.DB) {
 				cyan("fetched from API and added to database."))
 		}
 
+		// Check if airport exists but doesn't have an airport type
+		if airport.AirportType == nil {
+			// Prompt for airport type
+			promptForAirportType(&airport)
+
+			// Update the database with the new airport type
+			_, err = db.NamedExec(`
+				UPDATE airports SET
+					airport_type = :airport_type
+				WHERE id = :id
+			`, airport)
+			if err != nil {
+				fmt.Printf("%s %v\n", color.RedString("Error updating airport:"), err)
+			}
+		}
+
 		// Now try to add the FBO
 		err = fbo.AddFBO(db, icao)
 		if err != nil {
@@ -983,6 +1013,34 @@ func FindDistanceBetweenAirports(db *sqlx.DB) {
 		cyan(airport2.Name),
 		bold(icao2))
 	fmt.Printf("%s %.2f %s\n\n", bold("Distance:"), distance, green("nm"))
+}
+
+// promptForAirportType prompts the user to select an airport type and updates the airport object
+// Returns true if the user selected a type, false if they skipped
+func promptForAirportType(airport *models.Airport) bool {
+	var airportTypeOption string
+	airportTypePrompt := &survey.Select{
+		Message: "Select airport type:",
+		Options: []string{
+			"Aircraft Landing Area (ALA)",
+			"Aerodrome (AD)",
+			"Skip",
+		},
+	}
+	survey.AskOne(airportTypePrompt, &airportTypeOption)
+
+	// Update the airport object with the user-provided airport type
+	if airportTypeOption == "Aerodrome (AD)" {
+		airportType := "AD"
+		airport.AirportType = &airportType
+		return true
+	} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+		airportType := "ALA"
+		airport.AirportType = &airportType
+		return true
+	}
+	// If the user selects "Skip", leave the airport type as nil
+	return false
 }
 
 // FindOptimalFBOLocations finds optimal locations for FBOs
