@@ -540,6 +540,11 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			return
 		}
 
+		// (dangerously) assume an Australian ICAO if only three characters are provided
+		if len(icao) == 3 {
+			icao = "Y" + icao
+		}
+
 		// Convert ICAO to uppercase
 		icao = strings.ToUpper(icao)
 
