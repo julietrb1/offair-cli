@@ -144,8 +144,8 @@ func ModifyAirport(db *sqlx.DB) {
 			airportTypePrompt := &survey.Select{
 				Message: "Select airport type:",
 				Options: []string{
-					"Aerodrome (AD)",
 					"Aircraft Landing Area (ALA)",
+					"Aerodrome (AD)",
 					"Skip",
 				},
 			}
@@ -484,8 +484,8 @@ func ModifyAirportType(db *sqlx.DB, airport *models.Airport) {
 	airportTypePrompt := &survey.Select{
 		Message: fmt.Sprintf("Current airport type: %s. Select new type:", currentType),
 		Options: []string{
-			"Aerodrome (AD)",
 			"Aircraft Landing Area (ALA)",
+			"Aerodrome (AD)",
 			"Clear",
 			"Cancel",
 		},
@@ -598,8 +598,8 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			airportTypePrompt := &survey.Select{
 				Message: "Select airport type:",
 				Options: []string{
-					"Aerodrome (AD)",
 					"Aircraft Landing Area (ALA)",
+					"Aerodrome (AD)",
 					"Skip",
 				},
 			}
@@ -825,8 +825,8 @@ func AddFBO(db *sqlx.DB) {
 			airportTypePrompt := &survey.Select{
 				Message: "Select airport type:",
 				Options: []string{
-					"Aerodrome (AD)",
 					"Aircraft Landing Area (ALA)",
+					"Aerodrome (AD)",
 					"Skip",
 				},
 			}
