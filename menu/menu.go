@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
@@ -60,6 +61,9 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			return
 		}
 
+		// Convert ICAO to uppercase
+		icao = strings.ToUpper(icao)
+
 		var airport models.Airport
 		err := db.Get(&airport, "SELECT * FROM airports WHERE icao = ?", icao)
 		if err != nil {
@@ -112,16 +116,16 @@ func SearchAirportByICAO(db *sqlx.DB) {
 		green := color.New(color.FgGreen).SprintFunc()
 		yellow := color.New(color.FgYellow).SprintFunc()
 
-		fmt.Printf("%s %s %s %s\n", 
-			bold("Airport found:"), 
-			cyan(airport.Name), 
-			bold("("+airport.ICAO+")"), 
+		fmt.Printf("%s %s %s %s\n",
+			bold("Airport found:"),
+			cyan(airport.Name),
+			bold("("+airport.ICAO+")"),
 			green("in "+airport.CountryCode))
 
 		if airport.Latitude != nil && airport.Longitude != nil {
-			fmt.Printf("%s %.6f, %.6f\n", 
-				bold("Location:"), 
-				*airport.Latitude, 
+			fmt.Printf("%s %.6f, %.6f\n",
+				bold("Location:"),
+				*airport.Latitude,
 				*airport.Longitude)
 		}
 
@@ -244,13 +248,16 @@ func AddFBO(db *sqlx.DB) {
 			return
 		}
 
+		// Convert ICAO to uppercase
+		icao = strings.ToUpper(icao)
+
 		// Check if airport exists in database
 		var airport models.Airport
 		err := db.Get(&airport, "SELECT * FROM airports WHERE icao = ?", icao)
 		if err != nil {
-			fmt.Printf("%s %s %s\n", 
-				yellow("Airport with ICAO"), 
-				bold(icao), 
+			fmt.Printf("%s %s %s\n",
+				yellow("Airport with ICAO"),
+				bold(icao),
 				yellow("not found. Fetching from the API..."))
 
 			// Initialize API client
@@ -288,10 +295,10 @@ func AddFBO(db *sqlx.DB) {
 				continue
 			}
 
-			fmt.Printf("%s %s %s %s\n", 
-				cyan("Airport"), 
-				bold(dbAirport.Name), 
-				bold("("+dbAirport.ICAO+")"), 
+			fmt.Printf("%s %s %s %s\n",
+				cyan("Airport"),
+				bold(dbAirport.Name),
+				bold("("+dbAirport.ICAO+")"),
 				cyan("fetched from API and added to database."))
 		}
 
@@ -300,9 +307,9 @@ func AddFBO(db *sqlx.DB) {
 		if err != nil {
 			fmt.Printf("%s %v\n", red("Error:"), err)
 		} else {
-			fmt.Printf("%s %s %s\n", 
-				green("FBO added at"), 
-				bold(icao), 
+			fmt.Printf("%s %s %s\n",
+				green("FBO added at"),
+				bold(icao),
 				green("successfully."))
 		}
 		fmt.Println() // Add a blank line for better readability
