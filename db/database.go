@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -39,6 +40,11 @@ func InitDB() (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to create tables: %w", err)
 	}
 
+	// Add airport_type column if it doesn't exist
+	if err := addAirportTypeColumn(db); err != nil {
+		return nil, fmt.Errorf("failed to add airport_type column: %w", err)
+	}
+
 	return db, nil
 }
 
@@ -65,12 +71,27 @@ func createTables(db *sqlx.DB) error {
 			map_surface_type INTEGER,
 			is_in_simbrief BOOLEAN DEFAULT FALSE,
 			display_name TEXT,
-			has_fbo BOOLEAN DEFAULT FALSE
+			has_fbo BOOLEAN DEFAULT FALSE,
+			airport_type TEXT
 		)
 	`)
 	if err != nil {
 		return err
 	}
+
+	// Add airport_type column if it doesn't exist
+	_, err = db.Exec(`
+		PRAGMA table_info(airports);
+	`)
+	if err != nil {
+		return err
+	}
+
+	// SQLite doesn't have a direct way to check if a column exists, so we'll try to add it and ignore the error if it already exists
+	_, _ = db.Exec(`
+		ALTER TABLE airports ADD COLUMN airport_type TEXT;
+	`)
+	// Ignore the error if the column already exists
 
 	// Create FBOs table
 	_, err = db.Exec(`
@@ -89,5 +110,19 @@ func createTables(db *sqlx.DB) error {
 		return err
 	}
 
+	return nil
+}
+
+// addAirportTypeColumn adds the airport_type column to the airports table if it doesn't exist
+func addAirportTypeColumn(db *sqlx.DB) error {
+	// SQLite doesn't have a direct way to check if a column exists, so we'll try to add it and ignore the error if it already exists
+	_, err := db.Exec(`
+		ALTER TABLE airports ADD COLUMN airport_type TEXT;
+	`)
+	// Ignore the error if the column already exists
+	// SQLite returns an error like "duplicate column name: airport_type" if the column already exists
+	if err != nil && !strings.Contains(err.Error(), "duplicate column name") {
+		return err
+	}
 	return nil
 }

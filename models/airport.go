@@ -32,6 +32,7 @@ type Airport struct {
 	IsInSimbrief   bool     `json:"is_in_simbrief" db:"is_in_simbrief"`
 	DisplayName    *string  `json:"display_name" db:"display_name"`
 	HasFBO         bool     `json:"has_fbo" db:"has_fbo"`
+	AirportType    *string  `json:"airport_type" db:"airport_type"`
 }
 
 // FBO represents a Fixed Base Operation

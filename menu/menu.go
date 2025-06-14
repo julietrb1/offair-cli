@@ -139,16 +139,40 @@ func ModifyAirport(db *sqlx.DB) {
 				dbAirport.CountryCode = countryCode
 			}
 
+			// Prompt for airport type
+			var airportTypeOption string
+			airportTypePrompt := &survey.Select{
+				Message: "Select airport type:",
+				Options: []string{
+					"Aerodrome (AD)",
+					"Aircraft Landing Area (ALA)",
+					"Skip",
+				},
+			}
+			survey.AskOne(airportTypePrompt, &airportTypeOption)
+
+			// Update the airport object with the user-provided airport type
+			if airportTypeOption == "Aerodrome (AD)" {
+				airportType := "AD"
+				dbAirport.AirportType = &airportType
+			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+				airportType := "ALA"
+				dbAirport.AirportType = &airportType
+			}
+			// If the user selects "Skip", leave the airport type as nil
+
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
 					latitude, longitude, elevation, size, is_military, has_lights,
-					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo
+					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo,
+					airport_type
 				) VALUES (
 					:id, :name, :icao, :country_code, :iata, :state, :country_name, :city,
 					:latitude, :longitude, :elevation, :size, :is_military, :has_lights,
-					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo
+					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo,
+					:airport_type
 				)
 			`, dbAirport)
 			if err != nil {
@@ -214,6 +238,17 @@ func ModifyAirport(db *sqlx.DB) {
 					*airport.Longitude)
 			}
 
+			// Display airport type if available
+			if airport.AirportType != nil {
+				fmt.Printf("%s %s\n",
+					bold("Airport Type:"),
+					*airport.AirportType)
+			} else {
+				fmt.Printf("%s %s\n",
+					bold("Airport Type:"),
+					color.YellowString("Not set"))
+			}
+
 			// Removed "Has FBO" as per requirements
 			fmt.Println() // Add a blank line for better readability
 
@@ -226,6 +261,7 @@ func ModifyAirport(db *sqlx.DB) {
 					"Modify State",
 					"Modify Country Name",
 					"Modify City",
+					"Modify Airport Type",
 					"Back",
 				},
 			}
@@ -240,6 +276,8 @@ func ModifyAirport(db *sqlx.DB) {
 				ModifyCountryName(db, &airport)
 			case "Modify City":
 				ModifyCity(db, &airport)
+			case "Modify Airport Type":
+				ModifyAirportType(db, &airport)
 			case "Back":
 				// Break out of the inner loop and return to the ICAO input prompt
 				break
@@ -428,6 +466,66 @@ func ModifyCity(db *sqlx.DB, airport *models.Airport) {
 	}
 }
 
+// ModifyAirportType allows the user to modify the airport type
+func ModifyAirportType(db *sqlx.DB, airport *models.Airport) {
+	// Define color functions
+	bold := color.New(color.Bold).SprintFunc()
+
+	// Get current airport type
+	var currentType string
+	if airport.AirportType != nil {
+		currentType = *airport.AirportType
+	} else {
+		currentType = "Not set"
+	}
+
+	// Prompt for airport type
+	var airportTypeOption string
+	airportTypePrompt := &survey.Select{
+		Message: fmt.Sprintf("Current airport type: %s. Select new type:", currentType),
+		Options: []string{
+			"Aerodrome (AD)",
+			"Aircraft Landing Area (ALA)",
+			"Clear",
+			"Cancel",
+		},
+	}
+	survey.AskOne(airportTypePrompt, &airportTypeOption)
+
+	// Update the airport object with the user-provided airport type
+	if airportTypeOption == "Aerodrome (AD)" {
+		airportType := "AD"
+		airport.AirportType = &airportType
+	} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+		airportType := "ALA"
+		airport.AirportType = &airportType
+	} else if airportTypeOption == "Clear" {
+		airport.AirportType = nil
+	} else if airportTypeOption == "Cancel" {
+		return
+	}
+
+	// Update the database
+	_, err := db.NamedExec(`
+		UPDATE airports SET
+			airport_type = :airport_type
+		WHERE id = :id
+	`, airport)
+	if err != nil {
+		fmt.Printf("%s %v\n", color.RedString("Error updating airport:"), err)
+		return
+	}
+
+	if airportTypeOption == "Clear" {
+		fmt.Printf("%s\n", color.GreenString("Airport type cleared successfully."))
+	} else if airportTypeOption != "Cancel" {
+		fmt.Printf("%s %s %s\n",
+			color.GreenString("Airport type updated to"),
+			bold(airportTypeOption),
+			color.GreenString("successfully."))
+	}
+}
+
 // SearchAirportByICAO searches for an airport by ICAO
 func SearchAirportByICAO(db *sqlx.DB) {
 	for {
@@ -495,16 +593,40 @@ func SearchAirportByICAO(db *sqlx.DB) {
 				dbAirport.CountryCode = countryCode
 			}
 
+			// Prompt for airport type
+			var airportTypeOption string
+			airportTypePrompt := &survey.Select{
+				Message: "Select airport type:",
+				Options: []string{
+					"Aerodrome (AD)",
+					"Aircraft Landing Area (ALA)",
+					"Skip",
+				},
+			}
+			survey.AskOne(airportTypePrompt, &airportTypeOption)
+
+			// Update the airport object with the user-provided airport type
+			if airportTypeOption == "Aerodrome (AD)" {
+				airportType := "AD"
+				dbAirport.AirportType = &airportType
+			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+				airportType := "ALA"
+				dbAirport.AirportType = &airportType
+			}
+			// If the user selects "Skip", leave the airport type as nil
+
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
 					latitude, longitude, elevation, size, is_military, has_lights,
-					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo
+					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo,
+					airport_type
 				) VALUES (
 					:id, :name, :icao, :country_code, :iata, :state, :country_name, :city,
 					:latitude, :longitude, :elevation, :size, :is_military, :has_lights,
-					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo
+					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo,
+					:airport_type
 				)
 			`, dbAirport)
 			if err != nil {
@@ -698,16 +820,40 @@ func AddFBO(db *sqlx.DB) {
 				dbAirport.CountryCode = countryCode
 			}
 
+			// Prompt for airport type
+			var airportTypeOption string
+			airportTypePrompt := &survey.Select{
+				Message: "Select airport type:",
+				Options: []string{
+					"Aerodrome (AD)",
+					"Aircraft Landing Area (ALA)",
+					"Skip",
+				},
+			}
+			survey.AskOne(airportTypePrompt, &airportTypeOption)
+
+			// Update the airport object with the user-provided airport type
+			if airportTypeOption == "Aerodrome (AD)" {
+				airportType := "AD"
+				dbAirport.AirportType = &airportType
+			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+				airportType := "ALA"
+				dbAirport.AirportType = &airportType
+			}
+			// If the user selects "Skip", leave the airport type as nil
+
 			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
 					latitude, longitude, elevation, size, is_military, has_lights,
-					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo
+					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo,
+					airport_type
 				) VALUES (
 					:id, :name, :icao, :country_code, :iata, :state, :country_name, :city,
 					:latitude, :longitude, :elevation, :size, :is_military, :has_lights,
-					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo
+					:is_basecamp, :map_surface_type, :is_in_simbrief, :display_name, :has_fbo,
+					:airport_type
 				)
 			`, dbAirport)
 			if err != nil {

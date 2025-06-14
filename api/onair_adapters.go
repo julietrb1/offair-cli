@@ -24,6 +24,7 @@ func AdaptAirportToDBModel(apiAirport onair.Airport) models.Airport {
 		HasLights:   apiAirport.HasLights,
 		IsBasecamp:  apiAirport.IsBasecamp,
 		HasFBO:      false, // Default to false, will be set by the application if needed
+		AirportType: nil,   // Default to nil, will be set by the application when prompted
 	}
 
 	// Handle optional fields (pointers in DB model)
