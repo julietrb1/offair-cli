@@ -691,6 +691,7 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 				"List Distances Between FBOs",
 				"Find Distance Between Airports",
 				"Find Optimal FBO Locations",
+				"Find Redundant FBOs",
 				"Back to Main Menu",
 			},
 		}
@@ -705,6 +706,8 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 			FindDistanceBetweenAirports(db)
 		case "Find Optimal FBO Locations":
 			FindOptimalFBOLocations(db)
+		case "Find Redundant FBOs":
+			FindRedundantFBOs(db)
 		case "Back to Main Menu":
 			return
 		}
@@ -1087,4 +1090,43 @@ func FindOptimalFBOLocations(db *sqlx.DB) {
 
 	fmt.Println(bold(cyan("Calculating optimal FBO locations...")))
 	fmt.Println(result)
+}
+
+// FindRedundantFBOs finds FBOs that don't contribute significantly to the network
+func FindRedundantFBOs(db *sqlx.DB) {
+	optimalDistanceStr := os.Getenv("FBO_NM_OPTIMAL")
+	if optimalDistanceStr == "" {
+		optimalDistanceStr = "800" // Default value when environment variable is not set
+	}
+	optimalDistance, _ := strconv.ParseFloat(optimalDistanceStr, 64)
+
+	maxDistanceStr := os.Getenv("FBO_NM_MAX")
+	if maxDistanceStr == "" {
+		maxDistanceStr = "1200" // Default value when environment variable is not set
+	}
+	maxDistance, _ := strconv.ParseFloat(maxDistanceStr, 64)
+
+	requireLightsStr := os.Getenv("FBO_REQ_LIGHTS")
+	if requireLightsStr == "" {
+		requireLightsStr = "true" // Default value when environment variable is not set
+	}
+	requireLights := requireLightsStr == "true"
+
+	preferredSizeStr := os.Getenv("FBO_PREFERRED_SIZE")
+	var preferredSize *int
+	if preferredSizeStr != "" {
+		size, err := strconv.Atoi(preferredSizeStr)
+		if err == nil && size >= 0 && size <= 5 {
+			preferredSize = &size
+		}
+	}
+
+	result, err := fbo.FindRedundantFBOs(db, optimalDistance, maxDistance, requireLights, preferredSize)
+	if err != nil {
+		fmt.Printf("%s %v\n", color.RedString("Error:"), err)
+		return
+	}
+
+	fmt.Println(result)
+	fmt.Println()
 }
