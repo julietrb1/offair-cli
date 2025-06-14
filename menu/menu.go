@@ -87,9 +87,9 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
 
-			// Insert airport into DB
+			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
-				INSERT INTO airports (
+				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
 					latitude, longitude, elevation, size, is_military, has_lights,
 					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo
@@ -278,9 +278,9 @@ func AddFBO(db *sqlx.DB) {
 			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
 
-			// Insert airport into DB
+			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
-				INSERT INTO airports (
+				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
 					latitude, longitude, elevation, size, is_military, has_lights,
 					is_basecamp, map_surface_type, is_in_simbrief, display_name, has_fbo

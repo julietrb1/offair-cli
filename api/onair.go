@@ -72,6 +72,19 @@ func (api *OnAirAPI) GetAirport(icao string) (*onair.Airport, error) {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
+	// Validate the API response
+	if apiResp.Content.ICAO == "" {
+		return nil, fmt.Errorf("airport with ICAO %s not found in the API", icao)
+	}
+
+	if apiResp.Content.Name == "" {
+		return nil, fmt.Errorf("airport with ICAO %s has no name in the API", icao)
+	}
+
+	if apiResp.Content.CountryCode == "" {
+		return nil, fmt.Errorf("airport with ICAO %s has no country code in the API", icao)
+	}
+
 	return &apiResp.Content, nil
 }
 
