@@ -22,19 +22,19 @@ func ListAirportsWithFBOs(db *sqlx.DB) {
 		for _, a := range airports {
 			options = append(options, fmt.Sprintf("%s (%s)", a.Name, a.ICAO))
 		}
-		options = append(options, "Add FBO")
-		options = append(options, "Back")
+		options = append(options, AddFBOMenuLabel)
+		options = append(options, BackMenuLabel)
 
 		var selection string
 		prompt := &survey.Select{
-			Message: "Airports with FBOs:",
+			Message: AirportsWithFBOsPrompt,
 			Options: options,
 		}
 		survey.AskOne(prompt, &selection)
 
-		if selection == "Back" {
+		if selection == BackMenuLabel {
 			return
-		} else if selection == "Add FBO" {
+		} else if selection == AddFBOMenuLabel {
 			AddFBO(db)
 		} else {
 			// Extract ICAO from selection (format: "Name (ICAO)")

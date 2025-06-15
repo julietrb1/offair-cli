@@ -12,9 +12,7 @@ import (
 
 // ModifyAirport allows the user to modify airport details
 func ModifyAirport(db *sqlx.DB) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
-	cyan := color.New(color.FgCyan).SprintFunc()
 
 	for {
 		var icao string
@@ -23,15 +21,11 @@ func ModifyAirport(db *sqlx.DB) {
 		}
 		survey.AskOne(prompt, &icao)
 
-		// If the user enters a blank ICAO, return to the previous menu
 		if icao == "" {
 			return
 		}
-
-		// Convert ICAO to uppercase
 		icao = strings.ToUpper(icao)
 
-		// Check if airport exists in database
 		var airport models.Airport
 		err := db.Get(&airport, "SELECT * FROM airports WHERE icao = ?", icao)
 		if err != nil {
@@ -40,7 +34,6 @@ func ModifyAirport(db *sqlx.DB) {
 				bold(icao),
 				color.YellowString("not found. Fetching from the API..."))
 
-			// Initialize API client
 			onairAPI, err := api.NewOnAirAPI()
 			if err != nil {
 				fmt.Printf("%s %v\n", color.RedString("Error initializing API client:"), err)
@@ -48,17 +41,14 @@ func ModifyAirport(db *sqlx.DB) {
 				continue
 			}
 
-			// Fetch airport from API
 			apiAirport, err := onairAPI.GetAirport(icao)
 			if err != nil {
 				fmt.Printf("%s %v\n", color.RedString("Error fetching airport from API:"), err)
 				continue
 			}
 
-			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
 
-			// Check if country code is empty
 			if dbAirport.CountryCode == "" {
 				fmt.Printf("%s %s %s\n",
 					color.YellowString("Airport with ICAO"),
@@ -71,41 +61,34 @@ func ModifyAirport(db *sqlx.DB) {
 				}
 				survey.AskOne(countryPrompt, &countryCode)
 
-				// If the user enters a blank country code, return to the ICAO input prompt
 				if countryCode == "" {
 					continue
 				}
 
-				// Convert country code to uppercase
 				countryCode = strings.ToUpper(countryCode)
-
-				// Update the airport object with the user-provided country code
 				dbAirport.CountryCode = countryCode
 			}
 
 			// Prompt for airport type
 			var airportTypeOption string
 			airportTypePrompt := &survey.Select{
-				Message: "Select airport type:",
+				Message: SelectAirportTypeMenuLabel,
 				Options: []string{
-					"Aircraft Landing Area (ALA)",
-					"Aerodrome (AD)",
-					"Skip",
+					ALAMenuLabel,
+					ADMenuLabel,
+					SkipMenuLabel,
 				},
 			}
 			survey.AskOne(airportTypePrompt, &airportTypeOption)
 
-			// Update the airport object with the user-provided airport type
-			if airportTypeOption == "Aerodrome (AD)" {
+			if airportTypeOption == ADMenuLabel {
 				airportType := "AD"
 				dbAirport.AirportType = &airportType
-			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+			} else if airportTypeOption == ALAMenuLabel {
 				airportType := "ALA"
 				dbAirport.AirportType = &airportType
 			}
-			// If the user selects "Skip", leave the airport type as nil
 
-			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
@@ -126,18 +109,14 @@ func ModifyAirport(db *sqlx.DB) {
 
 			fmt.Printf("%s %s\n",
 				dbAirport.ICAO,
-				cyan("fetched from API and added to database."))
+				color.GreenString("fetched and added to database."))
 
-			// Update airport variable
 			airport = dbAirport
 		}
 
-		// Check if airport exists but doesn't have an airport type
 		if airport.AirportType == nil {
-			// Prompt for airport type
 			promptForAirportType(&airport)
 
-			// Update the database with the new airport type
 			_, err = db.NamedExec(`
 				UPDATE airports SET
 					airport_type = :airport_type
@@ -148,16 +127,13 @@ func ModifyAirport(db *sqlx.DB) {
 			}
 		}
 
-		// Inner loop for modifying fields
 		for {
-			// Display airport information
 			fmt.Printf("%s %s %s %s\n",
 				bold("Airport:"),
-				cyan(airport.Name),
+				color.CyanString(airport.Name),
 				bold("("+airport.ICAO+")"),
 				color.GreenString("in "+airport.CountryCode))
 
-			// Display country name if available
 			if airport.CountryName != nil {
 				fmt.Printf("%s %s\n",
 					bold("Country Name:"),
@@ -168,7 +144,6 @@ func ModifyAirport(db *sqlx.DB) {
 					color.YellowString("Not set"))
 			}
 
-			// Display state if available
 			if airport.State != nil {
 				fmt.Printf("%s %s\n",
 					bold("State:"),
@@ -179,7 +154,6 @@ func ModifyAirport(db *sqlx.DB) {
 					color.YellowString("Not set"))
 			}
 
-			// Display city if available
 			if airport.City != nil {
 				fmt.Printf("%s %s\n",
 					bold("City:"),
@@ -190,7 +164,6 @@ func ModifyAirport(db *sqlx.DB) {
 					color.YellowString("Not set"))
 			}
 
-			// Display location if available
 			if airport.Latitude != nil && airport.Longitude != nil {
 				fmt.Printf("%s %.6f, %.6f\n",
 					bold("Location:"),
@@ -198,7 +171,6 @@ func ModifyAirport(db *sqlx.DB) {
 					*airport.Longitude)
 			}
 
-			// Display airport type if available
 			if airport.AirportType != nil {
 				fmt.Printf("%s %s\n",
 					bold("Airport Type:"),
@@ -209,10 +181,8 @@ func ModifyAirport(db *sqlx.DB) {
 					color.YellowString("Not set"))
 			}
 
-			// Removed "Has FBO" as per requirements
-			fmt.Println() // Add a blank line for better readability
+			fmt.Println()
 
-			// Show modification options
 			var option string
 			modifyPrompt := &survey.Select{
 				Message: "Select field to modify:",
@@ -222,7 +192,7 @@ func ModifyAirport(db *sqlx.DB) {
 					"Modify Country Name",
 					"Modify City",
 					"Modify Airport Type",
-					"Back",
+					BackMenuLabel,
 				},
 			}
 			survey.AskOne(modifyPrompt, &option)
@@ -238,13 +208,12 @@ func ModifyAirport(db *sqlx.DB) {
 				ModifyCity(db, &airport)
 			case "Modify Airport Type":
 				ModifyAirportType(db, &airport)
-			case "Back":
+			case BackMenuLabel:
 				// Break out of the inner loop and return to the ICAO input prompt
 				break
 			}
 
-			// If the user selected "Back", break out of the inner loop
-			if option == "Back" {
+			if option == BackMenuLabel {
 				break
 			}
 		}
@@ -253,7 +222,6 @@ func ModifyAirport(db *sqlx.DB) {
 
 // ModifyCountryCode allows the user to modify the country code of an airport
 func ModifyCountryCode(db *sqlx.DB, airport *models.Airport) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 
 	var countryCode string
@@ -263,18 +231,12 @@ func ModifyCountryCode(db *sqlx.DB, airport *models.Airport) {
 	}
 	survey.AskOne(prompt, &countryCode)
 
-	// If the user enters a blank country code, return
 	if countryCode == "" {
 		return
 	}
-
-	// Convert country code to uppercase
 	countryCode = strings.ToUpper(countryCode)
-
-	// Update the airport object
 	airport.CountryCode = countryCode
 
-	// Update the database
 	_, err := db.NamedExec(`
 		UPDATE airports SET
 			country_code = :country_code
@@ -287,13 +249,11 @@ func ModifyCountryCode(db *sqlx.DB, airport *models.Airport) {
 
 	fmt.Printf("%s %s %s\n",
 		color.GreenString("Country code updated to"),
-		bold(countryCode),
-		color.GreenString("successfully."))
+		bold(countryCode))
 }
 
 // ModifyState allows the user to modify the state of an airport
 func ModifyState(db *sqlx.DB, airport *models.Airport) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 
 	var state string
@@ -308,14 +268,12 @@ func ModifyState(db *sqlx.DB, airport *models.Airport) {
 	}
 	survey.AskOne(prompt, &state)
 
-	// Update the airport object
 	if state == "" {
 		airport.State = nil
 	} else {
 		airport.State = &state
 	}
 
-	// Update the database
 	_, err := db.NamedExec(`
 		UPDATE airports SET
 			state = :state
@@ -327,18 +285,16 @@ func ModifyState(db *sqlx.DB, airport *models.Airport) {
 	}
 
 	if state == "" {
-		fmt.Printf("%s\n", color.GreenString("State cleared successfully."))
+		fmt.Printf("%s\n", color.GreenString("State cleared."))
 	} else {
 		fmt.Printf("%s %s %s\n",
 			color.GreenString("State updated to"),
-			bold(state),
-			color.GreenString("successfully."))
+			bold(state))
 	}
 }
 
 // ModifyCountryName allows the user to modify the country name of an airport
 func ModifyCountryName(db *sqlx.DB, airport *models.Airport) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 
 	var countryName string
@@ -353,14 +309,12 @@ func ModifyCountryName(db *sqlx.DB, airport *models.Airport) {
 	}
 	survey.AskOne(prompt, &countryName)
 
-	// Update the airport object
 	if countryName == "" {
 		airport.CountryName = nil
 	} else {
 		airport.CountryName = &countryName
 	}
 
-	// Update the database
 	_, err := db.NamedExec(`
 		UPDATE airports SET
 			country_name = :country_name
@@ -372,12 +326,11 @@ func ModifyCountryName(db *sqlx.DB, airport *models.Airport) {
 	}
 
 	if countryName == "" {
-		fmt.Printf("%s\n", color.GreenString("Country name cleared successfully."))
+		fmt.Printf("%s\n", color.GreenString("Country name cleared."))
 	} else {
 		fmt.Printf("%s %s %s\n",
 			color.GreenString("Country name updated to"),
-			bold(countryName),
-			color.GreenString("successfully."))
+			bold(countryName))
 	}
 }
 
@@ -405,7 +358,6 @@ func ModifyCity(db *sqlx.DB, airport *models.Airport) {
 		airport.City = &city
 	}
 
-	// Update the database
 	_, err := db.NamedExec(`
 		UPDATE airports SET
 			city = :city
@@ -417,55 +369,49 @@ func ModifyCity(db *sqlx.DB, airport *models.Airport) {
 	}
 
 	if city == "" {
-		fmt.Printf("%s\n", color.GreenString("City cleared successfully."))
+		fmt.Printf("%s\n", color.GreenString("City cleared."))
 	} else {
 		fmt.Printf("%s %s %s\n",
 			color.GreenString("City updated to"),
-			bold(city),
-			color.GreenString("successfully."))
+			bold(city))
 	}
 }
 
 // ModifyAirportType allows the user to modify the airport type
 func ModifyAirportType(db *sqlx.DB, airport *models.Airport) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 
-	// Get current airport type
 	var currentType string
 	if airport.AirportType != nil {
 		currentType = *airport.AirportType
 	} else {
-		currentType = "Not set"
+		currentType = NotSetMenuLabel
 	}
 
-	// Prompt for airport type
 	var airportTypeOption string
 	airportTypePrompt := &survey.Select{
 		Message: fmt.Sprintf("Current airport type: %s. Select new type:", currentType),
 		Options: []string{
-			"Aircraft Landing Area (ALA)",
-			"Aerodrome (AD)",
-			"Clear",
-			"Cancel",
+			ALAMenuLabel,
+			ADMenuLabel,
+			ClearMenuLabel,
+			CancelMenuLabel,
 		},
 	}
 	survey.AskOne(airportTypePrompt, &airportTypeOption)
 
-	// Update the airport object with the user-provided airport type
-	if airportTypeOption == "Aerodrome (AD)" {
+	if airportTypeOption == ADMenuLabel {
 		airportType := "AD"
 		airport.AirportType = &airportType
-	} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+	} else if airportTypeOption == ALAMenuLabel {
 		airportType := "ALA"
 		airport.AirportType = &airportType
-	} else if airportTypeOption == "Clear" {
+	} else if airportTypeOption == ClearMenuLabel {
 		airport.AirportType = nil
-	} else if airportTypeOption == "Cancel" {
+	} else if airportTypeOption == CancelMenuLabel {
 		return
 	}
 
-	// Update the database
 	_, err := db.NamedExec(`
 		UPDATE airports SET
 			airport_type = :airport_type
@@ -476,12 +422,11 @@ func ModifyAirportType(db *sqlx.DB, airport *models.Airport) {
 		return
 	}
 
-	if airportTypeOption == "Clear" {
-		fmt.Printf("%s\n", color.GreenString("Airport type cleared successfully."))
-	} else if airportTypeOption != "Cancel" {
+	if airportTypeOption == ClearMenuLabel {
+		fmt.Printf("%s\n", color.GreenString("Airport type cleared."))
+	} else if airportTypeOption != CancelMenuLabel {
 		fmt.Printf("%s %s %s\n",
 			color.GreenString("Airport type updated to"),
-			bold(airportTypeOption),
-			color.GreenString("successfully."))
+			bold(airportTypeOption))
 	}
 }

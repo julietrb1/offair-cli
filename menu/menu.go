@@ -29,7 +29,7 @@ func MainMenu(db *sqlx.DB) {
 		case "FBOs":
 			FBOOptimiserMenu(db)
 		case "Exit":
-			fmt.Println("Goodbye!")
+			fmt.Println(ExitMessage)
 			return
 		}
 	}
@@ -44,7 +44,7 @@ func AirportsMenu(db *sqlx.DB) {
 			Options: []string{
 				"Airport Lookup",
 				"Modify Airport",
-				"Back to Main Menu",
+				BackToMainMenuLabel,
 			},
 		}
 		survey.AskOne(prompt, &option)
@@ -54,7 +54,7 @@ func AirportsMenu(db *sqlx.DB) {
 			SearchAirportByICAO(db)
 		case "Modify Airport":
 			ModifyAirport(db)
-		case "Back to Main Menu":
+		case BackToMainMenuLabel:
 			return
 		}
 	}
@@ -67,12 +67,12 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 		prompt := &survey.Select{
 			Message: "FBOs:",
 			Options: []string{
-				"List Airports with FBOs",
-				"List Distances Between FBOs",
+				ListAirportsWithFBOsMenuLabel,
+				ListDistancesBetweenFBOsMenuLabel,
 				"Find Distance Between Airports",
 				"Find Optimal FBO Locations",
 				"[PRESENTLY BROKEN] Find Redundant FBOs",
-				"Back to Main Menu",
+				BackToMainMenuLabel,
 			},
 		}
 		survey.AskOne(prompt, &option)
@@ -88,7 +88,7 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 			FindOptimalFBOLocations(db)
 		case "Find Redundant FBOs":
 			FindRedundantFBOs(db)
-		case "Back to Main Menu":
+		case BackToMainMenuLabel:
 			return
 		}
 	}
@@ -100,18 +100,18 @@ func FBOOptions(db *sqlx.DB, icao string) {
 	prompt := &survey.Select{
 		Message: fmt.Sprintf("FBO at %s:", icao),
 		Options: []string{
-			"Remove FBO",
-			"Back",
+			RemoveFBOMenuLabel,
+			BackMenuLabel,
 		},
 	}
 	survey.AskOne(prompt, &option)
 
-	if option == "Remove FBO" {
+	if option == RemoveFBOMenuLabel {
 		err := fbo.RemoveFBO(db, icao)
 		if err != nil {
 			fmt.Printf("%s %v\n", color.RedString("Error:"), err)
 		} else {
-			fmt.Printf("FBO at %s removed successfully.\n", icao)
+			fmt.Printf("FBO at %s removed.\n", icao)
 		}
 	}
 }

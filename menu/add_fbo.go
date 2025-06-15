@@ -13,9 +13,7 @@ import (
 
 // AddFBO adds an FBO at an airport
 func AddFBO(db *sqlx.DB) {
-	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
-	cyan := color.New(color.FgCyan).SprintFunc()
 
 	for {
 		var icao string
@@ -24,15 +22,11 @@ func AddFBO(db *sqlx.DB) {
 		}
 		survey.AskOne(prompt, &icao)
 
-		// If the user enters a blank ICAO, return to the previous menu
 		if icao == "" {
 			return
 		}
-
-		// Convert ICAO to uppercase
 		icao = strings.ToUpper(icao)
 
-		// Check if airport exists in database
 		var airport models.Airport
 		err := db.Get(&airport, "SELECT * FROM airports WHERE icao = ?", icao)
 		if err != nil {
@@ -41,7 +35,6 @@ func AddFBO(db *sqlx.DB) {
 				bold(icao),
 				color.YellowString("not found. Fetching from the API..."))
 
-			// Initialize API client
 			onairAPI, err := api.NewOnAirAPI()
 			if err != nil {
 				fmt.Printf("%s %v\n", color.RedString("Error initializing API client:"), err)
@@ -49,17 +42,13 @@ func AddFBO(db *sqlx.DB) {
 				continue
 			}
 
-			// Fetch airport from API
 			apiAirport, err := onairAPI.GetAirport(icao)
 			if err != nil {
 				fmt.Printf("%s %v\n", color.RedString("Error fetching airport from API:"), err)
 				continue
 			}
 
-			// Adapt airport for DB
 			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
-
-			// Check if country code is empty
 			if dbAirport.CountryCode == "" {
 				fmt.Printf("%s %s %s\n",
 					color.YellowString("Airport with ICAO"),
@@ -72,41 +61,33 @@ func AddFBO(db *sqlx.DB) {
 				}
 				survey.AskOne(countryPrompt, &countryCode)
 
-				// If the user enters a blank country code, return to the ICAO input prompt
 				if countryCode == "" {
 					continue
 				}
 
-				// Convert country code to uppercase
 				countryCode = strings.ToUpper(countryCode)
-
-				// Update the airport object with the user-provided country code
 				dbAirport.CountryCode = countryCode
 			}
 
-			// Prompt for airport type
 			var airportTypeOption string
 			airportTypePrompt := &survey.Select{
-				Message: "Select airport type:",
+				Message: SelectAirportTypeMenuLabel,
 				Options: []string{
-					"Aircraft Landing Area (ALA)",
-					"Aerodrome (AD)",
-					"Skip",
+					ALAMenuLabel,
+					ADMenuLabel,
+					SkipMenuLabel,
 				},
 			}
 			survey.AskOne(airportTypePrompt, &airportTypeOption)
 
-			// Update the airport object with the user-provided airport type
-			if airportTypeOption == "Aerodrome (AD)" {
+			if airportTypeOption == ADMenuLabel {
 				airportType := "AD"
 				dbAirport.AirportType = &airportType
-			} else if airportTypeOption == "Aircraft Landing Area (ALA)" {
+			} else if airportTypeOption == ALAMenuLabel {
 				airportType := "ALA"
 				dbAirport.AirportType = &airportType
 			}
-			// If the user selects "Skip", leave the airport type as nil
 
-			// Insert or replace airport in DB
 			_, err = db.NamedExec(`
 				INSERT OR REPLACE INTO airports (
 					id, name, icao, country_code, iata, state, country_name, city,
@@ -127,15 +108,12 @@ func AddFBO(db *sqlx.DB) {
 
 			fmt.Printf("%s %s\n",
 				dbAirport.ICAO,
-				cyan("fetched from API and added to database."))
+				color.CyanString("fetched from API and added to database."))
 		}
 
-		// Check if airport exists but doesn't have an airport type
 		if airport.AirportType == nil {
-			// Prompt for airport type
 			promptForAirportType(&airport)
 
-			// Update the database with the new airport type
 			_, err = db.NamedExec(`
 				UPDATE airports SET
 					airport_type = :airport_type
@@ -146,16 +124,14 @@ func AddFBO(db *sqlx.DB) {
 			}
 		}
 
-		// Now try to add the FBO
 		err = fbo.AddFBO(db, icao)
 		if err != nil {
 			fmt.Printf("%s %v\n", color.RedString("Error:"), err)
 		} else {
 			fmt.Printf("%s %s %s\n",
 				color.GreenString("FBO added at"),
-				bold(icao),
-				color.GreenString("successfully."))
+				bold(icao))
 		}
-		fmt.Println() // Add a blank line for better readability
+		fmt.Println()
 	}
 }
