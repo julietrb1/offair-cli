@@ -30,6 +30,7 @@ OffAir is in development and is oriented towards developers. The interface and f
    ```
    ONAIR_API_KEY=your_api_key_here
    ```
+   Optionally, also set `ONAIR_COMPANY_ID` to sync a company's FBOs directly from OnAir.
 
 2. Run the application:
    ```
