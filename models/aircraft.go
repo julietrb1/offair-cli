@@ -46,8 +46,3 @@ type AircraftTypeAtAirport struct {
 	AircraftType
 	Count int `json:"count" db:"count"`
 }
-
-// AircraftAtAirportResponse represents the response from the API for aircraft at an airport
-type AircraftAtAirportResponse struct {
-	Content []AircraftTypeAtAirport `json:"Content"`
-}

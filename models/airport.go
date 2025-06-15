@@ -35,7 +35,7 @@ type Airport struct {
 	AirportType    *string  `json:"airport_type" db:"airport_type"`
 }
 
-// FBO represents a Fixed Base Operation
+// FBO represents a Fixed Base of Operations
 type FBO struct {
 	ID        int     `json:"id" db:"id"`
 	AirportID string  `json:"airport_id" db:"airport_id"`

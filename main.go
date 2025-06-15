@@ -25,6 +25,6 @@ func main() {
 	boldCyan := color.New(color.FgCyan, color.Bold).SprintFunc()
 
 	// Print welcome message with color
-	fmt.Println(boldCyan("Welcome to OffAir CLI!"))
+	fmt.Println(boldCyan("Welcome to OffAir, the OnAir companion CLI!"))
 	menu.MainMenu(database)
 }

@@ -19,7 +19,7 @@ type OnAirAPI struct {
 	client *http.Client
 }
 
-// NewOnAirAPI creates a new OnAir API client
+// NewOnAirAPI creates a new OnAir API client with the required API key
 func NewOnAirAPI() (*OnAirAPI, error) {
 	apiKey := os.Getenv("ONAIR_API_KEY")
 	if apiKey == "" {
@@ -46,33 +46,16 @@ type OAResponse[T any] struct {
 // GetAirport fetches an airport by its ICAO.
 func (api *OnAirAPI) GetAirport(icao string) (*onair.Airport, error) {
 	url := fmt.Sprintf("%s/v1/airports/%s", onAirBaseURL, icao)
-
-	// Create HTTP request
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := getResponse(url, api)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set(onAirAuthHeaderName, api.apiKey)
-
-	// Perform HTTP request
-	resp, err := api.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Validate response status
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
+		return nil, err
 	}
 
-	// Parse the API response
 	var apiResp OAResponse[onair.Airport]
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	// Validate the API response
 	if apiResp.Content.ICAO == "" {
 		return nil, fmt.Errorf("airport with ICAO %s not found in the API", icao)
 	}
@@ -81,31 +64,15 @@ func (api *OnAirAPI) GetAirport(icao string) (*onair.Airport, error) {
 		return nil, fmt.Errorf("airport with ICAO %s has no name in the API", icao)
 	}
 
-	// Note: We don't check for empty country code here anymore
-	// If the country code is empty, we'll prompt the user to enter it
-
 	return &apiResp.Content, nil
 }
 
 // GetAircraftType fetches an aircraft type by its ID.
 func (api *OnAirAPI) GetAircraftType(aircraftTypeID string) (*models.AircraftType, error) {
 	url := fmt.Sprintf("%s/v1/aircrafttypes/%s", onAirBaseURL, aircraftTypeID)
-
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := getResponse(url, api)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set(onAirAuthHeaderName, api.apiKey)
-
-	resp, err := api.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, err
 	}
 
 	var apiResp OAResponse[models.AircraftType]
@@ -117,9 +84,38 @@ func (api *OnAirAPI) GetAircraftType(aircraftTypeID string) (*models.AircraftTyp
 }
 
 // GetAircraftAtAirport fetches all aircraft at a specific airport by its ICAO.
-func (api *OnAirAPI) GetAircraftAtAirport(icao string) (*models.AircraftAtAirportResponse, error) {
+func (api *OnAirAPI) GetAircraftAtAirport(icao string) (*[]onair.AircraftTypeAtAirport, error) {
 	url := fmt.Sprintf("%s/v1/airports/%s/aircraft", onAirBaseURL, icao)
+	resp, err := getResponse(url, api)
+	if err != nil {
+		return nil, err
+	}
 
+	var aircraftResponse OAResponse[[]onair.AircraftTypeAtAirport]
+	if err := json.NewDecoder(resp.Body).Decode(&aircraftResponse); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return &aircraftResponse.Content, nil
+}
+
+func (api *OnAirAPI) GetCompanyFBOs(companyID string) ([]onair.FBO, error) {
+	url := fmt.Sprintf("%s/v1/company/%s/fbos", onAirBaseURL, companyID)
+
+	resp, err := getResponse(url, api)
+	if err != nil {
+		return nil, err
+	}
+
+	var apiResp OAResponse[[]onair.FBO]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
+	}
+
+	return apiResp.Content, nil
+}
+
+func getResponse(url string, api *OnAirAPI) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -136,11 +132,5 @@ func (api *OnAirAPI) GetAircraftAtAirport(icao string) (*models.AircraftAtAirpor
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
-	var aircraftResponse models.AircraftAtAirportResponse
-	if err := json.NewDecoder(resp.Body).Decode(&aircraftResponse); err != nil {
-		return nil, fmt.Errorf("error decoding response: %w", err)
-	}
-
-	return &aircraftResponse, nil
+	return resp, nil
 }
