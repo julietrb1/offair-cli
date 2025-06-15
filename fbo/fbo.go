@@ -620,7 +620,11 @@ func FindOptimalFBOLocations(db *sqlx.DB, optimalDistance, maxDistance float64, 
 }
 
 // FindRedundantFBOs identifies FBOs that don't contribute significantly to the overall network
-func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requireLights bool, preferredSize *int) (string, error) {
+// Uses a redundancy threshold (default 100.0) and a small co-location distance (10nm)
+// to identify redundant FBOs. The algorithm uses a stable scoring system that produces
+// consistent results across different threshold values, making it more predictable and
+// less sensitive to small changes in the threshold.
+func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requireLights bool, preferredSize *int, redundancyThreshold float64) (string, error) {
 	// Define color functions
 	bold := color.New(color.Bold).SprintFunc()
 	cyan := color.New(color.FgCyan).SprintFunc()
@@ -746,13 +750,13 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 			return "", err
 		}
 
-		// If no redundant FBOs or no positive scores, we're done
-		if len(redundantFBOs) == 0 || redundantFBOs[0].Score <= 0 {
+		// If no redundant FBOs or no scores above threshold, we're done
+		if len(redundantFBOs) == 0 || redundantFBOs[0].Score <= redundancyThreshold {
 			break
 		}
 
-		// Add the most redundant FBO to our list if it has a positive score
-		if redundantFBOs[0].Score > 0 {
+		// Add the most redundant FBO to our list if it has a score above threshold
+		if redundantFBOs[0].Score > redundancyThreshold {
 			// Check if this FBO is co-located with any already removed FBO
 			isColocated := false
 			for _, existingRedundant := range allRedundantFBOs {
@@ -763,8 +767,8 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 						*existingRedundant.FBO.Latitude, *existingRedundant.FBO.Longitude,
 						*redundantFBOs[0].FBO.Latitude, *redundantFBOs[0].FBO.Longitude)
 
-					// If FBOs are within 50nm, consider them co-located
-					if distance < 50 {
+					// If FBOs are within 10nm, consider them co-located
+					if distance < 10 {
 						isColocated = true
 						break
 					}
@@ -786,8 +790,8 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 				// If co-located or already removed, skip to next best candidate
 				if len(redundantFBOs) > 1 {
 					for i := 1; i < len(redundantFBOs); i++ {
-						if redundantFBOs[i].Score <= 0 {
-							break // No more positive scores
+						if redundantFBOs[i].Score <= redundancyThreshold {
+							break // No more scores above threshold
 						}
 
 						isNextColocated := false
@@ -799,7 +803,7 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 									*existingRedundant.FBO.Latitude, *existingRedundant.FBO.Longitude,
 									*redundantFBOs[i].FBO.Latitude, *redundantFBOs[i].FBO.Longitude)
 
-								if distance < 50 {
+								if distance < 10 {
 									isNextColocated = true
 									break
 								}
@@ -857,14 +861,26 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 			*preferredSize)
 	}
 
+	// Add information about redundancy threshold
+	result += fmt.Sprintf("%s %.1f %s\n",
+		bold("Redundancy threshold:"),
+		redundancyThreshold,
+		yellow("(scores range from 0-100, higher threshold = less aggressive)"))
+
 	result += fmt.Sprintf("%s %d existing FBOs in the network.\n\n",
 		bold("Found:"), len(existingFBOs))
 
 	// If no redundant FBOs were found
 	if len(allRedundantFBOs) == 0 {
-		result += bold(green("Scenario Assessment: ")) + "Based on the analysis, no FBOs are considered redundant in the current network. " +
-			"The existing FBO distribution provides optimal coverage given the specified criteria.\n\n" +
-			"No changes are recommended at this time."
+		result += bold(green("Scenario Assessment: ")) + fmt.Sprintf(
+			"Based on the analysis with a redundancy threshold of %.1f, no FBOs are considered redundant in the current network. "+
+				"The existing FBO distribution provides optimal coverage given the specified criteria.\n\n"+
+				"No changes are recommended at this time. If you wish to identify more FBOs for potential removal, "+
+				"you can lower the redundancy threshold by setting the FBO_REDUNDANCY_THRESHOLD environment variable.\n\n"+
+				"The redundancy score ranges from 0 to 100, with higher scores indicating FBOs that contribute less to the network. "+
+				"A threshold of 100 is very strict (no FBOs will be considered redundant), while a threshold of 50 is moderate, "+
+				"and a threshold of 0 would consider all FBOs for potential removal (not recommended).",
+			redundancyThreshold)
 		return result, nil
 	}
 
@@ -883,8 +899,13 @@ func FindRedundantFBOs(db *sqlx.DB, optimalDistance, maxDistance float64, requir
 
 	// Add scenario description
 	result += bold(green("Scenario Assessment: ")) + fmt.Sprintf(
-		"The analysis identified %d FBOs that could be considered redundant without significantly impacting network coverage.\n\n",
-		len(allRedundantFBOs))
+		"The analysis identified %d FBOs that could be considered redundant without significantly impacting network coverage. "+
+			"With the current redundancy threshold of %.1f, only FBOs with scores above this value are considered for removal, "+
+			"ensuring that only the most redundant FBOs are identified while maintaining adequate network coverage.\n\n"+
+			"The redundancy score ranges from 0 to 100, with higher scores indicating FBOs that contribute less to the network. "+
+			"The scores are calculated using a stable algorithm that considers how each FBO affects the overall network metrics "+
+			"when removed. This approach ensures consistent results across different threshold values.\n\n",
+		len(allRedundantFBOs), redundancyThreshold)
 
 	// Add before/after metrics comparison
 	result += bold("Network Metrics Comparison:\n")
@@ -1089,10 +1110,30 @@ func calculateRedundancyScore(originalMetrics, newMetrics NetworkMetrics) float6
 	// Combine factors into a score
 	// Positive score means the FBO is redundant (network improves when removed)
 	// Negative score means the FBO is important (network gets worse when removed)
-	score := (efficiencyChange * 50.0) + (ratioChange * 30.0) - (avgDistanceChange * 20.0)
 
-	// Scale to a more readable range
-	score *= 100.0
+	// Apply logarithmic scaling to make the algorithm more stable
+	// This will spread out the scores more evenly and reduce sensitivity to small changes
+	efficiencyComponent := math.Log1p(math.Abs(efficiencyChange)) * 20.0
+	if efficiencyChange < 0 {
+		efficiencyComponent = -efficiencyComponent
+	}
+
+	ratioComponent := math.Log1p(math.Abs(ratioChange)) * 15.0
+	if ratioChange < 0 {
+		ratioComponent = -ratioComponent
+	}
+
+	distanceComponent := math.Log1p(math.Abs(avgDistanceChange)) * 10.0
+	if avgDistanceChange > 0 {
+		distanceComponent = -distanceComponent
+	}
+
+	// Combine the components with a sigmoid function to smooth the transition
+	rawScore := efficiencyComponent + ratioComponent + distanceComponent
+
+	// Apply sigmoid scaling to create a more gradual transition around the threshold
+	// This transforms the score to a range of approximately 0-100
+	score := 100.0 / (1.0 + math.Exp(-rawScore/10.0))
 
 	return score
 }
