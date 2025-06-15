@@ -16,6 +16,7 @@ const (
 	ListAirportsWithFBOsMenuLabel     = "List Airports with FBOs"
 	ListDistancesBetweenFBOsMenuLabel = "List Distances Between FBOs"
 	RemoveFBOMenuLabel                = "Remove FBO"
+	SyncFBOsMenuLabel                 = "Sync FBOs"
 	BackToMainMenuLabel               = "Back to Main Menu"
 	ExitMessage                       = "Have fun out there, captain."
 	CancelMenuLabel                   = "Cancel"

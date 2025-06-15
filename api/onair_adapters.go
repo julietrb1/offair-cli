@@ -86,3 +86,17 @@ func AdaptAircraftTypeToDBModel(apiAircraftType models.AircraftType) models.Airc
 
 	return apiAircraftType
 }
+
+// AdaptFBOToDBModel converts an OnAir FBO object to a DB FBO object.
+func AdaptFBOToDBModel(apiFBO onair.FBO) models.FBO {
+	// Create a new DB model instance
+	dbFBO := models.FBO{
+		AirportID: apiFBO.AirportId,
+		ICAO:      apiFBO.Airport.ICAO,
+		Name:      apiFBO.Name,
+		Latitude:  apiFBO.Airport.Latitude,
+		Longitude: apiFBO.Airport.Longitude,
+	}
+
+	return dbFBO
+}

@@ -72,6 +72,7 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 				"Find Distance Between Airports",
 				"Find Optimal FBO Locations",
 				"[PRESENTLY BROKEN] Find Redundant FBOs",
+				SyncFBOsMenuLabel,
 				BackToMainMenuLabel,
 			},
 		}
@@ -88,6 +89,8 @@ func FBOOptimiserMenu(db *sqlx.DB) {
 			FindOptimalFBOLocations(db)
 		case "Find Redundant FBOs":
 			FindRedundantFBOs(db)
+		case SyncFBOsMenuLabel:
+			SyncFBOs(db)
 		case BackToMainMenuLabel:
 			return
 		}

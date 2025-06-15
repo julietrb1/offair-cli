@@ -50,6 +50,7 @@ func (api *OnAirAPI) GetAirport(icao string) (*onair.Airport, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var apiResp OAResponse[onair.Airport]
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
@@ -74,6 +75,7 @@ func (api *OnAirAPI) GetAircraftType(aircraftTypeID string) (*models.AircraftTyp
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var apiResp OAResponse[models.AircraftType]
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
@@ -90,6 +92,7 @@ func (api *OnAirAPI) GetAircraftAtAirport(icao string) (*[]onair.AircraftTypeAtA
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var aircraftResponse OAResponse[[]onair.AircraftTypeAtAirport]
 	if err := json.NewDecoder(resp.Body).Decode(&aircraftResponse); err != nil {
@@ -106,6 +109,7 @@ func (api *OnAirAPI) GetCompanyFBOs(companyID string) ([]onair.FBO, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var apiResp OAResponse[[]onair.FBO]
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
@@ -127,10 +131,11 @@ func getResponse(url string, api *OnAirAPI) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+	// Note: The caller is responsible for closing the response body
 	return resp, nil
 }
