@@ -1,5 +1,7 @@
 # OffAir: The OnAir CLI Companion
 
+<img src="img/offair_example.png" width="700"/>
+
 ## Overview
 OffAir is a command-line interface (CLI) tool designed to complement [OnAir](https://www.onair.company), a proprietary commercial flight simulation and management platform. This tool allows users to interact with OnAir data, particularly focusing on airport and Fixed Base of Operations (FBO) management and optimisation.
 
