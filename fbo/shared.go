@@ -2,8 +2,8 @@ package fbo
 
 import (
 	"fmt"
+	"github.com/julietrb1/offair-cli/models"
 	"math"
-	"offair-cli/models"
 )
 
 // CalculateDistance calculates the distance between two points using the Haversine formula

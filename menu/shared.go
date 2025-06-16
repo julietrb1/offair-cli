@@ -2,7 +2,7 @@ package menu
 
 import (
 	"github.com/AlecAivazis/survey/v2"
-	"offair-cli/models"
+	"github.com/julietrb1/offair-cli/models"
 )
 
 const (

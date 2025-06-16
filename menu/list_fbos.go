@@ -5,7 +5,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
-	"offair-cli/fbo"
+	"github.com/julietrb1/offair-cli/fbo"
 )
 
 // ListAirportsWithFBOs lists all airports with FBOs and provides options to add/remove FBOs

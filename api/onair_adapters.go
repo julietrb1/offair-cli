@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
-	"offair-cli/models/onair"
+	"github.com/julietrb1/offair-cli/models/onair"
 	"time"
 
-	"offair-cli/models"
+	"github.com/julietrb1/offair-cli/models"
 )
 
 // AdaptAirportToDBModel converts an API Airport object to a DB Airport object.

@@ -5,9 +5,9 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
-	"offair-cli/api"
-	"offair-cli/fbo"
-	"offair-cli/models"
+	"github.com/julietrb1/offair-cli/api"
+	"github.com/julietrb1/offair-cli/fbo"
+	"github.com/julietrb1/offair-cli/models"
 	"strings"
 )
 

@@ -3,7 +3,7 @@ package fbo
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"offair-cli/models"
+	"github.com/julietrb1/offair-cli/models"
 )
 
 // ListAirportsWithFBOs lists all airports with FBOs

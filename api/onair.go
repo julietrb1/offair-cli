@@ -3,11 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/julietrb1/offair-cli/models/onair"
 	"net/http"
-	"offair-cli/models/onair"
 	"os"
 
-	"offair-cli/models"
+	"github.com/julietrb1/offair-cli/models"
 )
 
 const onAirBaseURL = "https://server1.onair.company/api"

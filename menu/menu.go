@@ -6,7 +6,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
 
-	"offair-cli/fbo"
+	"github.com/julietrb1/offair-cli/fbo"
 )
 
 // MainMenu displays the main menu and handles user selection

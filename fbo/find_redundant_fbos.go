@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
+	"github.com/julietrb1/offair-cli/models"
 	"math"
-	"offair-cli/models"
 	"sort"
 )
 

@@ -6,8 +6,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
-	"offair-cli/db"
-	"offair-cli/menu"
+	"github.com/julietrb1/offair-cli/db"
+	"github.com/julietrb1/offair-cli/menu"
 )
 
 func main() {

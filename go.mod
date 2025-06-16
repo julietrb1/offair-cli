@@ -1,4 +1,4 @@
-module offair-cli
+module github.com/julietrb1/offair-cli
 
 go 1.24
 
