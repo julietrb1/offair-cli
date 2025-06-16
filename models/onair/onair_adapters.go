@@ -1,15 +1,15 @@
-package api
+package onair
 
 import (
 	"fmt"
-	"github.com/julietrb1/offair-cli/models/onair"
 	"time"
 
 	"github.com/julietrb1/offair-cli/models"
+	oa "github.com/julietrb1/onair-api-go-client/models"
 )
 
 // AdaptAirportToDBModel converts an API Airport object to a DB Airport object.
-func AdaptAirportToDBModel(apiAirport onair.Airport) models.Airport {
+func AdaptAirportToDBModel(apiAirport oa.Airport) models.Airport {
 	// Create a new DB model instance
 	dbAirport := models.Airport{
 		BaseModel: models.BaseModel{
@@ -88,10 +88,10 @@ func AdaptAircraftTypeToDBModel(apiAircraftType models.AircraftType) models.Airc
 }
 
 // AdaptFBOToDBModel converts an OnAir FBO object to a DB FBO object.
-func AdaptFBOToDBModel(apiFBO onair.FBO) models.FBO {
+func AdaptFBOToDBModel(apiFBO oa.FBO) models.FBO {
 	// Create a new DB model instance
 	dbFBO := models.FBO{
-		AirportID: apiFBO.AirportId,
+		AirportID: apiFBO.AirportID,
 		ICAO:      apiFBO.Airport.ICAO,
 		Name:      apiFBO.Name,
 		Latitude:  apiFBO.Airport.Latitude,

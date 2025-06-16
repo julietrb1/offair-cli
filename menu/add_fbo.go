@@ -5,9 +5,10 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
-	"github.com/julietrb1/offair-cli/api"
 	"github.com/julietrb1/offair-cli/fbo"
 	"github.com/julietrb1/offair-cli/models"
+	"github.com/julietrb1/offair-cli/models/onair"
+	"github.com/julietrb1/onair-api-go-client/api"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func AddFBO(db *sqlx.DB) {
 				continue
 			}
 
-			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
+			dbAirport := onair.AdaptAirportToDBModel(*apiAirport)
 			if dbAirport.CountryCode == "" {
 				fmt.Printf("%s %s %s\n",
 					color.YellowString("Airport with ICAO"),

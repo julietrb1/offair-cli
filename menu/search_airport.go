@@ -5,8 +5,9 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
-	"github.com/julietrb1/offair-cli/api"
 	"github.com/julietrb1/offair-cli/models"
+	"github.com/julietrb1/offair-cli/models/onair"
+	"github.com/julietrb1/onair-api-go-client/api"
 	"strings"
 )
 
@@ -56,7 +57,7 @@ func SearchAirportByICAO(db *sqlx.DB) {
 			}
 
 			// Adapt airport for DB
-			dbAirport := api.AdaptAirportToDBModel(*apiAirport)
+			dbAirport := onair.AdaptAirportToDBModel(*apiAirport)
 
 			if dbAirport.CountryCode == "" && icao[0] == 'Y' {
 				// Infer "AU" from above assumption

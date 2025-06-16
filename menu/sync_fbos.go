@@ -2,13 +2,14 @@ package menu
 
 import (
 	"fmt"
+	"github.com/julietrb1/offair-cli/models/onair"
 	"os"
 
 	"github.com/fatih/color"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/julietrb1/offair-cli/api"
 	"github.com/julietrb1/offair-cli/models"
+	"github.com/julietrb1/onair-api-go-client/api"
 )
 
 func SyncFBOs(db *sqlx.DB) {
@@ -34,12 +35,12 @@ func SyncFBOs(db *sqlx.DB) {
 		return
 	}
 
-	if len(fbos) == 0 {
+	if len(*fbos) == 0 {
 		fmt.Println("No FBOs found for the company.")
 		return
 	}
 
-	fmt.Printf("Found %d FBOs from API.\n", len(fbos))
+	fmt.Printf("Found %d FBOs from API.\n", len(*fbos))
 
 	// Begin transaction
 	tx, err := db.Beginx()
@@ -74,9 +75,9 @@ func SyncFBOs(db *sqlx.DB) {
 
 	// Process FBOs from API
 	var added, updated, unchanged int
-	for _, fbo := range fbos {
+	for _, fbo := range *fbos {
 		// Convert OnAir FBO to DB model
-		dbFBO := api.AdaptFBOToDBModel(fbo)
+		dbFBO := onair.AdaptFBOToDBModel(fbo)
 		airportsWithFBOs[dbFBO.AirportID] = true
 
 		// Check if FBO already exists
