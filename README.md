@@ -3,7 +3,7 @@
 <img src="img/offair_example.png" width="700"/>
 
 ## Overview
-OffAir is a command-line interface (CLI) tool designed to complement [OnAir](https://www.onair.company), a proprietary commercial flight simulation and management platform. This tool allows users to interact with OnAir data, particularly focusing on airport and Fixed Base of Operations (FBO) management and optimisation.
+OffAir is an unofficial CLI designed to complement [OnAir](https://www.onair.company), a proprietary commercial flight simulation and management platform. This CLI interacts with OnAir data, focusing on airport and FBO management and optimisation.
 
 ## Purpose
 The primary purpose of OffAir is to provide additional functionality for OnAir users, enabling you to:
@@ -50,6 +50,6 @@ All data used by this tool is sourced from OnAir's API and remains subject to On
 This tool is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
 
 ## License
-See [LICENSE](LICENSE).
+See [LICENSE](LICENSE).  I do not represent OnAir - this contribution is a work of passion only.
 
 Please note that while the code and documentation of this project are licensed on their own, the concepts and the data pulled from [OnAir](https://www.onair.company) are proprietary and subject to [OnAir's terms and conditions](https://www.onair.company/terms-conditions/).
